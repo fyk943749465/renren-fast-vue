@@ -80,6 +80,7 @@ export default {
       this.category.parentCid = data.catId
       this.category.catLevel = data.catLevel * 1 + 1
       this.category.catId = null
+      this.category.name = ''
       this.category.productUnit = ''
       this.category.icon = ''
       this.category.sort = 0
