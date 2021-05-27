@@ -25,7 +25,7 @@
         </span>
       </span>
   </el-tree>
-  <el-dialog :title="title" :visible.sync="dialogVisible" width="30%">
+  <el-dialog :title="title" :visible.sync="dialogVisible" width="30%" :close-on-click-modal="false">
     <el-form :model="category">
       <el-form-item label="Category Name">
         <el-input v-model="category.name" auto-complete="off"></el-input>
@@ -79,6 +79,11 @@ export default {
       this.dialogVisible = true
       this.category.parentCid = data.catId
       this.category.catLevel = data.catLevel * 1 + 1
+      this.category.catId = null
+      this.category.productUnit = ''
+      this.category.icon = ''
+      this.category.sort = 0
+      this.category.showStatus = 1
     },
     submitData() {
       if (this.dialogType === 'add') {
