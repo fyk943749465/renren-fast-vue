@@ -1,6 +1,14 @@
 <template>
 <div>
-  <el-tree :data="data" :props="defaultProps" show-checkbox node-key="catId" :expand-on-click-node="false" :default-expanded-keys="expandedKey">
+  <el-tree :data="data"
+    :props="defaultProps"
+    show-checkbox node-key="catId"
+    :expand-on-click-node="false"
+    draggable
+    :allow-drop="allowDrop"
+    :default-expanded-keys="expandedKey"
+    @node-drop="handleDrop"
+  >
     <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
         <span>
@@ -51,6 +59,8 @@ export default {
   props: {},
   data() {
     return {
+      updateNodes: [],
+      maxLevel: 0,
       title: '',
       dialogType: '', // edit, add
       category: {name: '', parentCid: 0, catLevel: 0, showStatus: 1, sort: 0, icon: '', productUnit: '', catId: null},
@@ -71,6 +81,77 @@ export default {
       }).then(({data}) => {
         this.data = data.data
       })
+    },
+    allowDrop(draggingNode, dropNode, type) {
+      this.maxLevel = this.countDraggingNodeLevel(draggingNode.data)
+      let deep = this.maxLevel - draggingNode.data.catLevel + 1
+      console.log(type)
+      if (type === 'inner') {
+        return dropNode.data.catLevel + deep <= 3
+      } else {
+        return dropNode.data.catLevel + deep - 1 <= 3
+      }
+    },
+    countDraggingNodeLevel(data) {
+      if (data.childCategoryList !== null && data.childCategoryList.length !== 0) {
+        for (let i = 0; i < data.childCategoryList.length; ++i) {
+          let currentLevel = this.countDraggingNodeLevel(data.childCategoryList[i])
+          if (this.maxLevel < currentLevel) {
+            this.maxLevel = currentLevel
+          }
+        }
+        return this.maxLevel
+      }
+      return data.catLevel
+    },
+    handleDrop(draggingNode, dropNode, dropType, ev) {
+      // 1. find the current node's new parent node and siblings
+      console.log('draggingNode', draggingNode)
+      let pCid = 0
+      let siblings = null
+      if (dropType === 'before' || dropType === 'after') {
+        pCid = dropNode.parent.data.catId === undefined ? 0 : dropNode.parent.data.catId
+        siblings = dropNode.parent.childNodes
+      } else {
+        pCid = dropNode.data.catId
+        siblings = dropNode.childNodes
+      }
+      // 2. find the current node's new order and update catLevel
+      for (let i = 0; i < siblings.length; ++i) {
+        if (siblings[i].data.catId === draggingNode.data.catId) {
+          let catLevel = draggingNode.level
+          if (siblings[i].level !== draggingNode.level) {
+            catLevel = siblings[i].level
+            this.updateChildNodeLevel(siblings[i])
+          }
+          this.updateNodes.push({catId: siblings[i].data.catId, sort: i, parentCid: pCid, catLevel: catLevel})
+        } else {
+          this.updateNodes.push({catId: siblings[i].data.catId, sort: i})
+        }
+      }
+      console.log('updateNodes', this.updateNodes)
+      // 3. update database
+      this.$http({
+        url: this.$http.adornUrl('/product/category/update/sort'),
+        method: 'post',
+        data: this.$http.adornData(this.updateNodes, false)
+      }).then(({data}) => {
+        this.$message({
+          message: 'sort modify success',
+          type: 'success'
+        })
+        this.getMenus()
+        this.expandedKey = [pCid]
+      })
+    },
+    updateChildNodeLevel(node) {
+      if (node.childNodes !== null && node.childNodes.length > 0) {
+        for (let i = 0; i < node.childNodes.length; ++i) {
+          var cNode = node.childNodes[i].data
+          this.updateNodes.push({catId: cNode.catId, catLevel: node.childNodes[i].level})
+          this.updateChildNodeLevel(node.childNodes[i])
+        }
+      }
     },
     append(data) {
       console.log('append', data)
