@@ -1,13 +1,17 @@
 <template>
 <div>
+  <el-switch v-model="draggable" active-text="draggable" inactive-text="undraggable"></el-switch>
+  <el-button v-if="draggable" @click="batchSave">Batch Save</el-button>
+  <el-button type="danger" @click="batchDelete">Batch Delete</el-button>
   <el-tree :data="data"
     :props="defaultProps"
     show-checkbox node-key="catId"
     :expand-on-click-node="false"
-    draggable
+    :draggable="draggable"
     :allow-drop="allowDrop"
     :default-expanded-keys="expandedKey"
     @node-drop="handleDrop"
+    ref="menuTree"
   >
     <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -59,6 +63,8 @@ export default {
   props: {},
   data() {
     return {
+      pCid: [],
+      draggable: false,
       updateNodes: [],
       maxLevel: 0,
       title: '',
@@ -82,28 +88,77 @@ export default {
         this.data = data.data
       })
     },
+    // Determine whether the node can be dragged, return true or false
     allowDrop(draggingNode, dropNode, type) {
-      this.maxLevel = this.countDraggingNodeLevel(draggingNode.data)
-      let deep = this.maxLevel - draggingNode.data.catLevel + 1
-      console.log(type)
+      this.maxLevel = this.countDraggingNodeLevel(draggingNode)
+      let deep = Math.abs(this.maxLevel - draggingNode.level + 1)
+      console.log(`this.maxLevel:${this.maxLevel},draggingNode.level:${draggingNode.level}`)
       if (type === 'inner') {
-        return dropNode.data.catLevel + deep <= 3
+        return dropNode.level + deep <= 3
       } else {
-        return dropNode.data.catLevel + deep - 1 <= 3
+        return dropNode.level + deep - 1 <= 3
       }
     },
     countDraggingNodeLevel(data) {
-      if (data.childCategoryList !== null && data.childCategoryList.length !== 0) {
-        for (let i = 0; i < data.childCategoryList.length; ++i) {
-          let currentLevel = this.countDraggingNodeLevel(data.childCategoryList[i])
+      if (data.childNodes !== null && data.childNodes.length !== 0) {
+        for (let i = 0; i < data.childNodes.length; ++i) {
+          let currentLevel = this.countDraggingNodeLevel(data.childNodes[i])
           if (this.maxLevel < currentLevel) {
             this.maxLevel = currentLevel
           }
         }
         return this.maxLevel
       }
-      return data.catLevel
+      return data.level
     },
+    batchSave() {
+      // 3. update database
+      this.$http({
+        url: this.$http.adornUrl('/product/category/update/sort'),
+        method: 'post',
+        data: this.$http.adornData(this.updateNodes, false)
+      }).then(({data}) => {
+        this.$message({
+          message: 'sort modify success',
+          type: 'success'
+        })
+        this.getMenus()
+        this.expandedKey = this.pCid
+        this.updateNodes = []
+        this.maxLevel = 0
+        this.pCid = []
+      })
+    },
+    batchDelete() {
+      let catIds = []
+      let checkedNodes = this.$refs.menuTree.getCheckedNodes()
+      for (let i = 0; i < checkedNodes.length; ++i) {
+        catIds.push(checkedNodes[i].catId)
+      }
+      this.$confirm(`Batch Delete?[${catIds}]`, 'Tip', {
+        confirmButtonText: 'confirm',
+        cancelButtonText: 'cancel',
+        type: 'warning'
+      }).then(() => {
+        this.$http({
+          url: this.$http.adornUrl('/product/category/delete'),
+          method: 'post',
+          data: this.$http.adornData(catIds, false)
+        }).then(({data}) => {
+          this.$message({
+            message: 'menu delete success',
+            type: 'success'
+          })
+          this.getMenus()
+        })
+      }).catch(() => {
+        this.$message({
+          message: 'menu delete fail',
+          type: 'fail'
+        })
+      })
+    },
+    // After dragging is complete, update the affected node information
     handleDrop(draggingNode, dropNode, dropType, ev) {
       // 1. find the current node's new parent node and siblings
       console.log('draggingNode', draggingNode)
@@ -116,6 +171,8 @@ export default {
         pCid = dropNode.data.catId
         siblings = dropNode.childNodes
       }
+
+      this.pCid.push(pCid)
       // 2. find the current node's new order and update catLevel
       for (let i = 0; i < siblings.length; ++i) {
         if (siblings[i].data.catId === draggingNode.data.catId) {
@@ -130,19 +187,6 @@ export default {
         }
       }
       console.log('updateNodes', this.updateNodes)
-      // 3. update database
-      this.$http({
-        url: this.$http.adornUrl('/product/category/update/sort'),
-        method: 'post',
-        data: this.$http.adornData(this.updateNodes, false)
-      }).then(({data}) => {
-        this.$message({
-          message: 'sort modify success',
-          type: 'success'
-        })
-        this.getMenus()
-        this.expandedKey = [pCid]
-      })
     },
     updateChildNodeLevel(node) {
       if (node.childNodes !== null && node.childNodes.length > 0) {
