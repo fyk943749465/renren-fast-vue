@@ -129,7 +129,7 @@
         console.log('latest infomation:', infomation)
         let {brandId, showStatus} = infomation
         this.$http({
-          url: this.$http.adornUrl('/product/brand/update'),
+          url: this.$http.adornUrl('/product/brand/update/status'),
           method: 'post',
           data: this.$http.adornData({brandId, showStatus}, false)
         }).then(({data}) => {
