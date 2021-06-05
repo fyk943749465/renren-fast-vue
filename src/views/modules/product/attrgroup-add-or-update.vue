@@ -37,7 +37,7 @@
         props: {
           value: 'catId',
           label: 'name',
-          children: 'childCategoryList'
+          children: 'children2'
         },
         visible: false,
         dataForm: {

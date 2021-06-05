@@ -16,7 +16,7 @@
     <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
         <span>
-          <el-button v-if="data.childCategoryList.length != 0"
+          <el-button v-if="data.children.length != 0"
             type="text"
             size="mini"
             @click="() => append(data)">
@@ -74,7 +74,7 @@ export default {
       data: [],
       expandedKey: [],
       defaultProps: {
-        children: 'childCategoryList',
+        children: 'children',
         label: 'name'
       }
     }

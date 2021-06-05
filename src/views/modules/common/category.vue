@@ -10,7 +10,7 @@ export default {
     return {
       data: [],
       defaultProps: {
-        children: 'childCategoryList',
+        children: 'children',
         label: 'name'
       }
     }
