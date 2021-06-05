@@ -69,6 +69,7 @@
           width="150"
           label="操作">
           <template slot-scope="scope">
+            <el-button type="text" size="small" @click="relationHandle(scope.row.attrGroupId)">关联</el-button>
             <el-button type="text" size="small" @click="addOrUpdateHandle(scope.row.attrGroupId)">修改</el-button>
             <el-button type="text" size="small" @click="deleteHandle(scope.row.attrGroupId)">删除</el-button>
           </template>
@@ -85,6 +86,8 @@
       </el-pagination>
       <!-- 弹窗, 新增 / 修改 -->
       <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList"></add-or-update>
+      <!-- 修改关联关系 -->
+      <relation-update v-if="relationVisible" ref="relationUpdate" @refreshData="getDataList"></relation-update>
     </div>
   </el-col>
 </el-row>
@@ -93,8 +96,9 @@
 <script>
 import Category from '../common/category'
 import AddOrUpdate from './attrgroup-add-or-update'
+import RelationUpdate from './attr-group-relation'
 export default {
-  components: {Category, AddOrUpdate},
+  components: {Category, AddOrUpdate, RelationUpdate},
   props: {},
   data() {
     return {
@@ -108,13 +112,20 @@ export default {
       totalPage: 0,
       dataListLoading: false,
       dataListSelections: [],
-      addOrUpdateVisible: false
+      addOrUpdateVisible: false,
+      relationVisible: false
     }
   },
   activated () {
     this.getDataList()
   },
   methods: {
+    relationHandle(groupId) {
+      this.relationVisible = true
+      this.$nextTick(() => {
+        this.$refs.relationUpdate.init(groupId)
+      })
+    },
     // 感知树节点被点击
     treenodeclick(data, node, component) {
       console.log('parent感知树节点被点击', data, node, component)
@@ -122,6 +133,10 @@ export default {
         this.catId = node.data.catId
         this.getDataList()
       }
+    },
+    getAllDataList() {
+      this.catId = 0
+      this.getDataList()
     },
     // 获取数据列表
     getDataList () {
