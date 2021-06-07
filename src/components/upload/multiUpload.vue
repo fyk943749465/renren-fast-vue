@@ -25,9 +25,9 @@ import { getUUID } from '@/utils'
 export default {
   name: 'multiUpload',
   props: {
-    //图片属性数组
+    // 图片属性数组
     value: Array,
-    //最大上传图片数量
+    // 最大上传图片数量
     maxCount: {
       type: Number,
       default: 30
@@ -50,22 +50,21 @@ export default {
   },
   computed: {
     fileList() {
-      let fileList = [];
+      let fileList = []
       for (let i = 0; i < this.value.length; i++) {
-        fileList.push({ url: this.value[i] });
+        fileList.push({ url: this.value[i] })
       }
-
       return fileList
     }
   },
   mounted() {},
   methods: {
     emitInput(fileList) {
-      let value = [];
+      let value = []
       for (let i = 0; i < fileList.length; i++) {
         value.push(fileList[i].url)
       }
-      this.$emit('input', value);
+      this.$emit('input', value)
     },
     handleRemove(file, fileList) {
       this.emitInput(fileList)
@@ -79,28 +78,27 @@ export default {
       return new Promise((resolve, reject) => {
         policy()
           .then(response => {
-            console.log(`这是什么${filename}`)
             _self.dataObj.policy = response.data.policy
             _self.dataObj.signature = response.data.signature
             _self.dataObj.ossaccessKeyId = response.data.accessid
-            _self.dataObj.key = response.data.dir + '/'+getUUID()+`_${filename}`
-            _self.dataObj.dir = response.data.dir;
-            _self.dataObj.host = response.data.host;
+            _self.dataObj.key = response.data.dir + '/' + getUUID() + file.name
+            _self.dataObj.dir = response.data.dir
+            _self.dataObj.host = response.data.host
             resolve(true)
           })
           .catch(err => {
-            console.log('出错了...',err)
-            reject(false)
-          });
-      });
+            console.log('出错了...', err)
+            reject(err)
+          })
+      })
     },
     handleUploadSuccess(res, file) {
       this.fileList.push({
         name: file.name,
         // url: this.dataObj.host + "/" + this.dataObj.dir + "/" + file.name； 替换${filename}为真正的文件名
-        url: this.dataObj.host + '/' + this.dataObj.key.replace("${filename}", file.name)
+        url: this.dataObj.host + '/' + file.name
       })
-      this.emitInput(this.fileList);
+      this.emitInput(this.fileList)
     },
     handleExceed(files, fileList) {
       this.$message({
@@ -110,7 +108,7 @@ export default {
       })
     }
   }
-};
+}
 </script>
 <style>
 </style>
