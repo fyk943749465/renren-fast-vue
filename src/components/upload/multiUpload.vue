@@ -78,6 +78,7 @@ export default {
       return new Promise((resolve, reject) => {
         policy()
           .then(response => {
+            console.log('file.name', file.name)
             _self.dataObj.policy = response.data.policy
             _self.dataObj.signature = response.data.signature
             _self.dataObj.ossaccessKeyId = response.data.accessid
@@ -96,7 +97,7 @@ export default {
       this.fileList.push({
         name: file.name,
         // url: this.dataObj.host + "/" + this.dataObj.dir + "/" + file.name； 替换${filename}为真正的文件名
-        url: this.dataObj.host + '/' + file.name
+        url: this.dataObj.host + '/' + this.dataObj.key
       })
       this.emitInput(this.fileList)
     },

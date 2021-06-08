@@ -347,6 +347,7 @@
 import CategoryCascader from '../common/category-cascader'
 import BrandSelect from '../common/brand-select'
 import MultiUpload from '@/components/upload/multiUpload'
+import PubSub from 'pubsub-js'
 export default {
   // import引入的组件需要注入到对象中才能使用
   components: { CategoryCascader, BrandSelect, MultiUpload },
@@ -775,12 +776,12 @@ export default {
   },
   created() {},
   mounted() {
-    // this.catPathSub = PubSub.subscribe('catPath', (msg, val) => {
-    //   this.spu.catalogId = val[val.length - 1]
-    // })
-    // this.brandIdSub = PubSub.subscribe('brandId', (msg, val) => {
-    //   this.spu.brandId = val
-    // })
+    this.catPathSub = PubSub.subscribe('catPath', (msg, val) => {
+      this.spu.catalogId = val[val.length - 1]
+    })
+    this.brandIdSub = PubSub.subscribe('brandId', (msg, val) => {
+      this.spu.brandId = val
+    })
     this.getMemberLevels()
   },
   beforeCreate() {},
@@ -788,8 +789,8 @@ export default {
   beforeUpdate() {},
   updated() {},
   beforeDestroy() {
-    // PubSub.unsubscribe(this.catPathSub)
-    // PubSub.unsubscribe(this.brandIdSub)
+    PubSub.unsubscribe(this.catPathSub)
+    PubSub.unsubscribe(this.brandIdSub)
   },
   destroyed() {},
   activated() {}
